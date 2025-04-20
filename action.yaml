@@ -13,7 +13,7 @@ inputs:
     description: 'Service definition file path (relative to artifacts)'
     required: true
   targets:
-    description: 'Target selection criteria in format KEY:VALUE (one per line)'
+    description: 'Target selection criteria in format tag:KEY:VALUE (one per line). Example: tag:Environment:DEV'
     required: true
   working-directory:
     description: 'Where to extract artifacts on target instances'
