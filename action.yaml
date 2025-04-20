@@ -1,7 +1,8 @@
+---
 name: 'Actions AWS Host Service'
 description: 'Deploy and manage systemd services on EC2 instances using SSM'
 inputs:
-  name: 
+  name:
     description: 'Service name'
     required: true
   status:
@@ -21,7 +22,7 @@ inputs:
   artifacts:
     description: 'Folder containing deployment artifacts'
     required: true
-  action: 
+  action:
     description: "Desire outcome: apply, plan or destroy"
     required: false
     default: "apply"
@@ -36,25 +37,25 @@ outputs:
 
 runs:
   using: "composite"
-    
+
   steps:
     - uses: hashicorp/setup-terraform@v3
-    - name: init 
+    - name: init
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
         terraform init \
           -backend-config="bucket=${{ env.TF_BACKEND_s3 }}" \
           -backend-config="dynamodb_table=${{ env.TF_BACKEND_dynamodb }}" \
-          -backend-config="key=${{ inputs.name }}" 
+          -backend-config="key=${{ inputs.name }}"
 
     - name: run action
       id: tf-action
       shell: bash
       working-directory: ${{ github.action_path }}
-      env: 
+      env:
         ACTION: ${{ inputs.action }}
-        ACTION_ARGS: ${{ inputs.action != 'plan' && '-auto-approve' || '' }} 
+        ACTION_ARGS: ${{ inputs.action != 'plan' && '-auto-approve' || '' }}
         TF_VAR_name: ${{ inputs.name }}
         TF_VAR_status: ${{ inputs.status }}
         TF_VAR_working_directory: ${{ inputs.working-directory }}
