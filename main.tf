@@ -1,17 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-# S3 bucket for artifacts
 resource "aws_s3_bucket" "artifacts" {
   bucket = "actions-aws-host-service-${var.name}-${random_id.bucket.hex}"
   

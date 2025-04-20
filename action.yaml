@@ -39,7 +39,6 @@ runs:
   using: "composite"
 
   steps:
-    - uses: hashicorp/setup-terraform@v3
     - name: init
       shell: bash
       working-directory: ${{ github.action_path }}
