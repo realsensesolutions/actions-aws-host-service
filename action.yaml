@@ -13,7 +13,7 @@ inputs:
     description: 'Service definition file path (relative to artifacts)'
     required: true
   targets:
-    description: 'Target selection criteria'
+    description: 'Target selection criteria in format KEY:VALUE (one per line)'
     required: true
   working-directory:
     description: 'Where to extract artifacts on target instances'
@@ -60,7 +60,6 @@ runs:
         TF_VAR_working_directory: ${{ inputs.working-directory }}
         TF_VAR_artifact_path: ${{ github.sha }}-${{ github.run_attempt }}
         TF_VAR_definition_file: ${{ inputs.definition }}
-        TF_VAR_target_key: ${{ fromJson(inputs.targets)[0].Key }}
-        TF_VAR_target_values: ${{ toJson(fromJson(inputs.targets)[0].Values) }}
+        TF_VAR_targets: ${{ inputs.targets }}
         TF_VAR_artifacts_path: ${{ inputs.artifacts }}
       run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}
