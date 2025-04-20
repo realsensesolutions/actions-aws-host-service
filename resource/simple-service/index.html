@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test Service</title>
+</head>
+<body>
+    <h1>Simple Test Service</h1>
+    <p>This is a test service deployed via GitHub Actions and AWS SSM</p>
+    <p>Deployment time: <span id="deployTime"></span></p>
+    <script>
+        document.getElementById('deployTime').textContent = new Date().toISOString();
+    </script>
+</body>
+</html> 

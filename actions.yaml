@@ -1,0 +1,66 @@
+name: 'Actions AWS Host Service'
+description: 'Deploy and manage systemd services on EC2 instances using SSM'
+inputs:
+  name: 
+    description: 'Service name'
+    required: true
+  status:
+    description: 'Service status (enabled/disabled)'
+    required: true
+    default: 'enabled'
+  definition:
+    description: 'Service definition file path (relative to artifacts)'
+    required: true
+  targets:
+    description: 'Target selection criteria'
+    required: true
+  working-directory:
+    description: 'Where to extract artifacts on target instances'
+    required: true
+    default: '/home/ssm-user'
+  artifacts:
+    description: 'Folder containing deployment artifacts'
+    required: true
+  action: 
+    description: "Desire outcome: apply, plan or destroy"
+    required: false
+    default: "apply"
+
+outputs:
+  bucket:
+    description: "S3 bucket name for artifacts"
+    value: ${{ steps.tf-outputs.outputs.bucket }}
+  document:
+    description: "SSM document ARN"
+    value: ${{ steps.tf-outputs.outputs.document }}
+
+runs:
+  using: "composite"
+    
+  steps:
+    - uses: hashicorp/setup-terraform@v3
+    - name: init 
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        terraform init \
+          -backend-config="bucket=${{ env.TF_BACKEND_s3 }}" \
+          -backend-config="dynamodb_table=${{ env.TF_BACKEND_dynamodb }}" \
+          -backend-config="key=${{ inputs.name }}" 
+
+    - name: run action
+      id: tf-action
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env: 
+        ACTION: ${{ inputs.action }}
+        ACTION_ARGS: ${{ inputs.action != 'plan' && '-auto-approve' || '' }} 
+        TF_VAR_name: ${{ inputs.name }}
+        TF_VAR_status: ${{ inputs.status }}
+        TF_VAR_working_directory: ${{ inputs.working-directory }}
+        TF_VAR_artifact_path: ${{ github.sha }}-${{ github.run_attempt }}
+        TF_VAR_definition_file: ${{ inputs.definition }}
+        TF_VAR_target_key: ${{ fromJson(inputs.targets)[0].Key }}
+        TF_VAR_target_values: ${{ toJson(fromJson(inputs.targets)[0].Values) }}
+        TF_VAR_artifacts_path: ${{ inputs.artifacts }}
+      run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}

@@ -1,0 +1,37 @@
+name: Test Action
+
+on:
+  push:
+    branches: 
+      - main
+  
+permissions:
+  id-token: write
+  contents: read
+
+env:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: us-east-1
+
+    - name: Deploy Service
+      uses: realsensesolutions/actions-aws-host-service@main
+      with:
+        status: enabled
+        name: simple-service
+        working-directory: /opt/simple-service
+        definition: simple.service
+        artifacts: resource/simple-service 
+        targets: |
+          ENV:DEV
+        
