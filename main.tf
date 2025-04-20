@@ -127,7 +127,7 @@ resource "aws_ssm_association" "service" {
     for_each = [for target in split("\n", var.targets) : {
       key   = "tag:${trimspace(split(":", target)[1])}"
       value = trimspace(split(":", target)[2])
-    } if length(split(":", target)) == 3]
+    } if length(split(":", target)) == 2]
     
     content {
       key    = targets.value.key
