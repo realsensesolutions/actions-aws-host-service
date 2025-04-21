@@ -172,4 +172,14 @@ output "bucket" {
 
 output "document" {
   value = aws_ssm_document.service.arn
+}
+
+output "role_name" {
+  value = aws_iam_role.ssm.name
+}
+
+# Attach AmazonSSMManagedInstanceCore policy to IAM role
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
+  role       = aws_iam_role.ssm.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 } 

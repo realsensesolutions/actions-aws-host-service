@@ -34,6 +34,9 @@ outputs:
   document:
     description: "SSM document ARN"
     value: ${{ steps.tf-outputs.outputs.document }}
+  role_name:
+    description: "IAM role name"
+    value: ${{ steps.tf-outputs.outputs.role_name }}
 
 runs:
   using: "composite"
@@ -63,3 +66,16 @@ runs:
         TF_VAR_targets: ${{ inputs.targets }}
         TF_VAR_artifacts_path: ${{ inputs.artifacts }}
       run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}
+
+    - name: get terraform outputs
+      id: tf-outputs
+      if: inputs.action != 'destroy'
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        BUCKET=$(terraform output -raw bucket)
+        DOCUMENT=$(terraform output -raw document)
+        ROLE_NAME=$(terraform output -raw role_name)
+        echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+        echo "document=$DOCUMENT" >> $GITHUB_OUTPUT
+        echo "role_name=$ROLE_NAME" >> $GITHUB_OUTPUT
