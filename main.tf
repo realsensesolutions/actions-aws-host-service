@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "artifacts" {
 
 # SSM document
 resource "aws_ssm_document" "service" {
-  name          = "actions-aws-host-service-${var.name}"
+  name          = "actions-aws-host-service-${var.name}-${data.archive_file.artifacts.output_md5}"
   document_type = "Command"
   document_format = "YAML"
   
