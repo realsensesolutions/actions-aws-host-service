@@ -46,11 +46,11 @@ resource "aws_ssm_document" "service" {
           runCommand:
             - |
               # Download artifacts from S3
-              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.zip /tmp/artifacts.zip
+              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz /tmp/artifacts.tar.gz
               # Extract to working directory
-              unzip -o /tmp/artifacts.zip -d {{WorkingDirectory}}
+              tar -xzf /tmp/artifacts.tar.gz -C {{WorkingDirectory}}
               # Clean up
-              rm /tmp/artifacts.zip
+              rm /tmp/artifacts.tar.gz
       - name: "UpdateService"
         action: "aws:runShellScript"
         inputs:
@@ -150,17 +150,17 @@ resource "aws_ssm_association" "service" {
   }
 }
 
-# Create zip archive of artifacts
+# Create tar.gz archive of artifacts
 data "archive_file" "artifacts" {
-  type        = "zip"
+  type        = "tar.gz"
   source_dir  = var.artifacts_path
-  output_path = "${path.module}/artifacts.zip"
+  output_path = "${path.module}/artifacts.tar.gz"
 }
 
-# Upload zip file to S3
+# Upload tar.gz file to S3
 resource "aws_s3_object" "artifacts" {
   bucket = aws_s3_bucket.artifacts.id
-  key    = "${var.artifact_path}/artifacts.zip"
+  key    = "${var.artifact_path}/artifacts.tar.gz"
   source = data.archive_file.artifacts.output_path
   etag   = data.archive_file.artifacts.output_md5
 }
