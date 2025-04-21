@@ -157,7 +157,7 @@ data "archive_file" "artifacts" {
   output_path = "${path.module}/artifacts.tar.gz"
 }
 
-# Upload tar.gz file to S3
+# Upload tar.gz file to S3 
 resource "aws_s3_object" "artifacts" {
   bucket = aws_s3_bucket.artifacts.id
   key    = "${var.artifact_path}/artifacts.tar.gz"
