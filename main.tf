@@ -59,7 +59,7 @@ resource "aws_ssm_document" "service" {
               # Compare service definition
               if [ ! -f "/etc/systemd/system/{{ServiceName}}.service" ] || ! diff -q "{{WorkingDirectory}}/{{DefinitionFile}}" "/etc/systemd/system/{{ServiceName}}.service"; then
                 # Copy new definition
-                cp "{{WorkingDirectory}}/{{DefinitionFile}}" "/etc/systemd/system/{{ServiceName}}.service"
+                mv "{{WorkingDirectory}}/{{DefinitionFile}}" "/etc/systemd/system/{{ServiceName}}.service"
                 systemctl daemon-reload
               fi
               

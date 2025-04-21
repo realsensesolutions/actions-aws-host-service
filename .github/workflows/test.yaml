@@ -33,5 +33,5 @@ jobs:
         definition: simple.service
         artifacts: resource/simple-service 
         targets: |
-          ENV:DEV
+          Name:alonso-rpi4
         
