@@ -32,19 +32,25 @@ resource "aws_ssm_document" "service" {
         type: String
         description: Service definition file path
     mainSteps:
-      - name: "DownloadArtifacts"
-        action: "aws:downloadContent"
-        inputs:
-          sourceType: "S3"
-          sourceInfo: "{\"path\": \"https://s3.amazonaws.com/${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.zip\"}"
-          destinationPath: "{{WorkingDirectory}}"
-      - name: "ExtractArtifacts"
+      - name: "PrepareDirectory"
         action: "aws:runShellScript"
         inputs:
           runCommand:
             - |
-              # Extract zip file
-              unzip -o "{{WorkingDirectory}}/artifacts.zip" -d "{{WorkingDirectory}}"
+              # Create working directory if it doesn't exist
+              mkdir -p {{WorkingDirectory}}
+              chmod 755 {{WorkingDirectory}}
+      - name: "DownloadArtifacts"
+        action: "aws:runShellScript"
+        inputs:
+          runCommand:
+            - |
+              # Download artifacts from S3
+              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.zip /tmp/artifacts.zip
+              # Extract to working directory
+              unzip -o /tmp/artifacts.zip -d {{WorkingDirectory}}
+              # Clean up
+              rm /tmp/artifacts.zip
       - name: "UpdateService"
         action: "aws:runShellScript"
         inputs:
