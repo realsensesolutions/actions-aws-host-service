@@ -33,3 +33,8 @@ variable "definition_file" {
   description = "Service definition file path"
   type        = string
 }
+
+variable "artifacts_path" {
+  description = "Local path to artifacts directory"
+  type        = string
+} 
