@@ -61,7 +61,7 @@ runs:
         TF_VAR_name: ${{ inputs.name }}
         TF_VAR_status: ${{ inputs.status }}
         TF_VAR_working_directory: ${{ inputs.working-directory }}
-        TF_VAR_artifacts_path: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_artifact_path: ${{ github.workspace }}/${{ inputs.artifacts }}
         TF_VAR_definition_file: ${{ inputs.definition }}
         TF_VAR_targets: ${{ inputs.targets }}
       run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}
