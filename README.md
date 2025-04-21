@@ -13,7 +13,6 @@ graph TD
     subgraph AWS
         S3[S3 Bucket]
         SSM[SSM Service]
-        IAM[IAM Role]
     end
 
     subgraph Host
@@ -21,11 +20,11 @@ graph TD
         SystemD[SystemD Service]
     end
 
-    GA -->|1. Upload| S3
-    GA -->|2. Update| SSM
-    SSM -->|3. Trigger| SSMAgent
-    SSMAgent -->|4. Pull| S3
-    SSMAgent -->|5. Update| SystemD
+    GA -->|upload| S3
+    GA -->|update| SSM
+    SSM -->|trigger| SSMAgent
+    SSMAgent -->|pull| S3
+    SSMAgent -->|update| SystemD
 ```
 
 ## Deployment Flow
@@ -37,13 +36,13 @@ sequenceDiagram
     participant SSM as SSM Service
     participant Host as Target Host
 
-    GA->>S3: 1. Upload Artifacts
-    GA->>SSM: 2. Update Document
-    SSM->>Host: 3. Trigger Execution
-    Host->>S3: 4. Pull Artifacts
-    Host->>Host: 5. Extract Files
-    Host->>Host: 6. Update Service
-    Host->>Host: 7. Manage State
+    GA->>S3: upload artifacts
+    GA->>SSM: update document
+    SSM->>Host: trigger execution
+    Host->>S3: pull artifacts
+    Host->>Host: extract files
+    Host->>Host: update service
+    Host->>Host: manage state
 ```
 
 ## Features
