@@ -21,12 +21,11 @@ graph TD
         SystemD[SystemD Service]
     end
 
-    GA -->|1. Upload Artifacts| S3
-    GA -->|2. Create SSM Document| SSM
-    GA -->|3. Assume Role| IAM
-    SSM -->|4. Execute Commands| SSMAgent
-    SSMAgent -->|5. Manage Service| SystemD
-    S3 -->|6. Download Artifacts| SSMAgent
+    GA -->|1. Upload| S3
+    GA -->|2. Update| SSM
+    SSM -->|3. Trigger| SSMAgent
+    SSMAgent -->|4. Pull| S3
+    SSMAgent -->|5. Update| SystemD
 ```
 
 ## Deployment Flow
@@ -38,14 +37,13 @@ sequenceDiagram
     participant SSM as SSM Service
     participant Host as Target Host
 
-    GA->>S3: 1. Create Bucket
-    GA->>S3: 2. Upload Artifacts
-    GA->>SSM: 3. Create Document
-    GA->>SSM: 4. Create Association
-    SSM->>Host: 5. Download Artifacts
-    SSM->>Host: 6. Extract Files
-    SSM->>Host: 7. Update Service
-    SSM->>Host: 8. Manage State
+    GA->>S3: 1. Upload Artifacts
+    GA->>SSM: 2. Update Document
+    SSM->>Host: 3. Trigger Execution
+    Host->>S3: 4. Pull Artifacts
+    Host->>Host: 5. Extract Files
+    Host->>Host: 6. Update Service
+    Host->>Host: 7. Manage State
 ```
 
 ## Features
@@ -128,12 +126,12 @@ jobs:
 
 ## How It Works
 
-1. Creates an S3 bucket for storing service artifacts
-2. Creates an SSM document with the service management commands
-3. Sets up IAM roles and policies for SSM
-4. Creates an SSM association targeting instances based on tags
-5. Uploads and deploys the service artifacts
-6. Manages the service state (enable/disable)
+1. GitHub Actions uploads artifacts to S3
+2. GitHub Actions updates SSM document
+3. SSM triggers execution on target hosts
+4. SSM agent on host pulls artifacts from S3
+5. SSM agent extracts and updates the service
+6. SSM agent manages the service state
 
 ## Security
 
