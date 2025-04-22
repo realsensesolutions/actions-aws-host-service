@@ -92,7 +92,7 @@ resource "aws_ssm_document" "service" {
 
 # IAM role for SSM
 resource "aws_iam_role" "ssm" {
-  name = "actions-aws-host-service-${var.name}"
+  name = aws_ssm_document.service.name
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -162,6 +162,7 @@ resource "aws_ssm_association" "service" {
     ArtifactPath    = var.artifact_path
     DefinitionFile  = var.definition_file
   }
+  depends_on = [aws_s3_object.artifacts]
 }
 
 # Create tar.gz archive of artifacts
