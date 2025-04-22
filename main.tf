@@ -54,8 +54,8 @@ resource "aws_ssm_document" "service" {
                 echo "AWS CLI not found. Installing..."
                 cd {{WorkingDirectory}}
                 sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
-                sudo unzip "awscliv2.zip"
-                sudo ./aws/install
+                sudo unzip "awscliv2.zip" 
+                sudo ./aws/install --update
                 sudo rm -rf awscliv2.zip aws
               fi
               
