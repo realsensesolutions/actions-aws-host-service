@@ -48,6 +48,7 @@ resource "aws_ssm_document" "service" {
               # Check if AWS CLI is installed
               if ! command -v aws &> /dev/null; then
                 echo "AWS CLI not found. Installing..."
+                sudo apt-get update
                 sudo apt-get install -y awscli
               fi
               
