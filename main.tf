@@ -124,8 +124,8 @@ resource "aws_iam_role_policy" "s3_access" {
         ]
         Effect = "Allow"
         Resource = [
-          aws_s3_bucket.artifacts.arn,
-          "${aws_s3_bucket.artifacts.arn}/*"
+          "arn:aws:s3:::actions-aws-host-service-*",
+          "arn:aws:s3:::actions-aws-host-service-*/*"
         ]
       }
     ]
