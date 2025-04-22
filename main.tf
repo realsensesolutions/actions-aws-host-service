@@ -1,3 +1,14 @@
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "name" {
+  description = "Name of the service"
+  type        = string
+}
+
 resource "aws_s3_bucket" "artifacts" {
   bucket = "actions-aws-host-service-${var.name}-${random_id.bucket.hex}"
   
@@ -41,11 +52,21 @@ resource "aws_ssm_document" "service" {
               mkdir -p {{WorkingDirectory}}
               chmod 755 {{WorkingDirectory}}
       - name: "DownloadArtifacts"
-        action: "aws:downloadContent"
+        action: "aws:runShellScript"
         inputs:
-          sourceType: "S3"
-          sourceInfo: "{\"path\":\"https://s3.amazonaws.com/${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz\"}"
-          destinationPath: "/tmp/artifacts.tar.gz"
+          runCommand:
+            - |
+              # Check if AWS CLI is installed
+              if ! command -v aws &> /dev/null; then
+                echo "AWS CLI not found. Installing..."
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                unzip awscliv2.zip
+                sudo ./aws/install
+                rm -rf awscliv2.zip aws
+              fi
+              
+              # Download artifacts from S3
+              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz /tmp/artifacts.tar.gz
       - name: "ExtractArtifacts"
         action: "aws:runShellScript"
         inputs:
@@ -167,6 +188,7 @@ resource "aws_s3_object" "artifacts" {
   key    = "${var.artifact_path}/artifacts.tar.gz"
   source = data.archive_file.artifacts.output_path
   etag   = data.archive_file.artifacts.output_md5
+  force_destroy = false
 }
 
 # Outputs
