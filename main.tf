@@ -41,12 +41,16 @@ resource "aws_ssm_document" "service" {
               mkdir -p {{WorkingDirectory}}
               chmod 755 {{WorkingDirectory}}
       - name: "DownloadArtifacts"
+        action: "aws:downloadContent"
+        inputs:
+          sourceType: "S3"
+          sourceInfo: "{\"path\":\"https://s3.amazonaws.com/${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz\"}"
+          destinationPath: "/tmp/artifacts.tar.gz"
+      - name: "ExtractArtifacts"
         action: "aws:runShellScript"
         inputs:
           runCommand:
             - |
-              # Download artifacts from S3
-              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz /tmp/artifacts.tar.gz
               # Extract to working directory
               tar -xzf /tmp/artifacts.tar.gz -C {{WorkingDirectory}}
               # Clean up
@@ -101,7 +105,7 @@ resource "aws_iam_role" "ssm" {
 resource "aws_iam_role_policy" "s3_access" {
   name = "s3-access"
   role = aws_iam_role.ssm.id
-  
+    
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
