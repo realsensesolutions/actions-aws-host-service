@@ -50,7 +50,7 @@ resource "aws_ssm_document" "service" {
           runCommand:
             - |
               # Check if AWS CLI is installed
-              if ! command -v aws 2>&1 >/dev/null; then
+              if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
                 echo "AWS CLI not found. Installing..."
                 sudo curl https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip
                 sudo unzip {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}}
@@ -59,7 +59,7 @@ resource "aws_ssm_document" "service" {
               fi
               
               # Download artifacts from S3
-              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
+              /usr/local/aws-cli/v2/current/bin/aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
       - name: "ExtractArtifacts"
         action: "aws:runShellScript"
         inputs:
