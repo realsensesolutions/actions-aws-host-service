@@ -92,7 +92,7 @@ resource "aws_ssm_document" "service" {
 
 # IAM role for SSM
 resource "aws_iam_role" "ssm" {
-  name = aws_ssm_document.service.name
+  name = "actions-aws-host-service-${var.name}"
   
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
