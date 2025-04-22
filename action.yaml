@@ -26,6 +26,10 @@ inputs:
     description: "Desire outcome: apply, plan or destroy"
     required: false
     default: "apply"
+  setup-aws-cli:
+    description: "Setup AWS CLI"
+    required: false
+    default: "false"
 
 outputs:
   bucket:
@@ -65,6 +69,7 @@ runs:
         TF_VAR_definition_file: ${{ inputs.definition }}
         TF_VAR_targets: ${{ inputs.targets }}
         TF_VAR_artifacts_path: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_setup_aws_cli: ${{ inputs.setup-aws-cli }}
       run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}
 
     - name: get terraform outputs
