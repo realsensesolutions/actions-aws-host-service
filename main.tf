@@ -52,10 +52,10 @@ resource "aws_ssm_document" "service" {
               # Check if AWS CLI is installed
               if ! command -v aws 2>&1 >/dev/null; then
                 echo "AWS CLI not found. Installing..."
-                sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "{{WorkingDirectory}}/awscliv2.zip"
-                sudo unzip {{WorkingDirectory}}/awscliv2.zip" -d "{{WorkingDirectory}}
+                sudo curl https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip
+                sudo unzip {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}}
                 sudo {{WorkingDirectory}}/aws/install --update
-                sudo rm -rf "{{WorkingDirectory}}/awscliv2.zip" "{{WorkingDirectory}}/aws"
+                sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
               fi
               
               # Download artifacts from S3
