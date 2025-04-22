@@ -28,9 +28,11 @@ jobs:
       uses: realsensesolutions/actions-aws-host-service@main
       with:
         status: enabled
+        
         name: simple-service
         working-directory: /opt/simple-service
         definition: simple.service
+        setup: setup.sh
         artifacts: resource/simple-service 
         targets: |
           Name:alonso-rpi4

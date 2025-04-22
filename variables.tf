@@ -37,4 +37,10 @@ variable "definition_file" {
 variable "artifacts_path" {
   description = "Local path to artifacts directory"
   type        = string
+}
+
+variable "setup_file" {
+  description = "Setup script file path (relative to artifacts)"
+  type        = string
+  default     = ""
 } 

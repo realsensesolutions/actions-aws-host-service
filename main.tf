@@ -31,6 +31,10 @@ resource "aws_ssm_document" "service" {
       DefinitionFile:
         type: String
         description: Service definition file path
+      SetupFile:
+        type: String
+        description: Setup script file path
+        default: ""
     mainSteps:
       - name: "PrepareDirectory"
         action: "aws:runShellScript"
@@ -65,6 +69,17 @@ resource "aws_ssm_document" "service" {
               tar -xzf {{WorkingDirectory}}/artifacts.tar.gz -C {{WorkingDirectory}}
               # Clean up
               rm {{WorkingDirectory}}/artifacts.tar.gz
+      - name: "RunSetup"
+        action: "aws:runShellScript"
+        inputs:
+          runCommand:
+            - |
+              # Run setup script if provided
+              if [ ! -z "{{SetupFile}}" ] && [ -f "{{WorkingDirectory}}/{{SetupFile}}" ]; then
+                chmod +x "{{WorkingDirectory}}/{{SetupFile}}"
+                cd "{{WorkingDirectory}}"
+                ./{{SetupFile}}
+              fi
       - name: "UpdateService"
         action: "aws:runShellScript"
         inputs:
@@ -161,6 +176,7 @@ resource "aws_ssm_association" "service" {
     WorkingDirectory = var.working_directory
     ArtifactPath    = var.artifact_path
     DefinitionFile  = var.definition_file
+    SetupFile       = var.setup_file
   }
 }
 
@@ -193,19 +209,8 @@ output "role_name" {
   value = aws_iam_role.ssm.name
 }
 
-output "association_id" {
-  value = aws_ssm_association.service.association_id
-}
-
 # Attach AmazonSSMManagedInstanceCore policy to IAM role
 resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
   role       = aws_iam_role.ssm.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-# Add setup_aws_cli variable
-variable "setup_aws_cli" {
-  description = "Whether to setup AWS CLI in the SSM document"
-  type        = string
-  default     = "false"
 } 
