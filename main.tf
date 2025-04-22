@@ -1,14 +1,3 @@
-variable "region" {
-  description = "AWS region"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "name" {
-  description = "Name of the service"
-  type        = string
-}
-
 resource "aws_s3_bucket" "artifacts" {
   bucket = "actions-aws-host-service-${var.name}-${random_id.bucket.hex}"
   
