@@ -141,7 +141,7 @@ resource "random_id" "bucket" {
 
 # SSM document association
 resource "aws_ssm_association" "service" {
-  name = aws_ssm_document.service.name
+  name = "aws_ssm_document.service.name-${data.archive_file.artifacts.output_md5}"
   
   dynamic "targets" {
     for_each = [for target in split("\n", var.targets) : {
