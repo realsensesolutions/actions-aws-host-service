@@ -46,7 +46,7 @@ runs:
       shell: bash
       working-directory: ${{ github.action_path }}
       run: |
-        terraform init \
+        terraform init -reconfigure \
           -backend-config="bucket=${{ env.TF_BACKEND_s3 }}" \
           -backend-config="dynamodb_table=${{ env.TF_BACKEND_dynamodb }}" \
           -backend-config="key=${{ inputs.name }}"
