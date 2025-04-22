@@ -30,6 +30,14 @@ inputs:
     description: "Setup AWS CLI"
     required: false
     default: "false"
+  run-association:
+    description: "Run SSM association immediately after creation"
+    required: false
+    default: "false"
+  wait-for-association-id:
+    description: "Wait for this association ID to complete before running this action"
+    required: false
+    default: ""
 
 outputs:
   bucket:
@@ -41,11 +49,25 @@ outputs:
   role_name:
     description: "IAM role name"
     value: ${{ steps.tf-outputs.outputs.role_name }}
+  association_id:
+    description: "SSM Association ID"
+    value: ${{ steps.tf-outputs.outputs.association_id }}
 
 runs:
   using: "composite"
 
   steps:
+    - name: Wait for previous association
+      if: inputs.wait-for-association-id != ''
+      shell: bash
+      run: |
+        echo "Waiting for association ${{ inputs.wait-for-association-id }} to complete..."
+        aws ssm describe-association-executions \
+          --association-id ${{ inputs.wait-for-association-id }} \
+          --max-results 5 \
+          --query "AssociationExecutions[0].Status" \
+          --output text
+
     - name: init
       shell: bash
       working-directory: ${{ github.action_path }}
@@ -81,6 +103,16 @@ runs:
         BUCKET=$(terraform output -raw bucket)
         DOCUMENT=$(terraform output -raw document)
         ROLE_NAME=$(terraform output -raw role_name)
+        ASSOCIATION_ID=$(terraform output -raw association_id)
         echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
         echo "document=$DOCUMENT" >> $GITHUB_OUTPUT
         echo "role_name=$ROLE_NAME" >> $GITHUB_OUTPUT
+        echo "association_id=$ASSOCIATION_ID" >> $GITHUB_OUTPUT
+    
+    - name: run association immediately
+      if: inputs.run-association == 'true' && inputs.action != 'destroy'
+      shell: bash
+      run: |
+        ASSOCIATION_ID=$(terraform -chdir=${{ github.action_path }} output -raw association_id)
+        echo "Running association $ASSOCIATION_ID immediately..."
+        aws ssm start-associations-once --association-ids $ASSOCIATION_ID

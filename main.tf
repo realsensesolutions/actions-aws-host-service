@@ -47,17 +47,11 @@ resource "aws_ssm_document" "service" {
             - |
               # Check if AWS CLI is installed
               if ! command -v aws 2>&1 >/dev/null; then
-                # Install AWS CLI only if setup_aws_cli is true
-                if [ "${var.setup_aws_cli}" = "true" ]; then
-                  echo "AWS CLI not found. Installing..."
-                  sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
-                  sudo unzip awscliv2.zip
-                  sudo ./aws/install
-                  sudo rm -rf awscliv2.zip aws
-                else
-                  echo "AWS CLI not found, but setup_aws_cli is not set to true. Skipping installation."
-                  exit 1
-                fi
+                echo "AWS CLI not found. Installing..."
+                sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+                sudo unzip awscliv2.zip
+                sudo ./aws/install
+                sudo rm -rf awscliv2.zip aws
               fi
               
               # Download artifacts from S3
@@ -199,15 +193,19 @@ output "role_name" {
   value = aws_iam_role.ssm.name
 }
 
+output "association_id" {
+  value = aws_ssm_association.service.association_id
+}
+
 # Attach AmazonSSMManagedInstanceCore policy to IAM role
 resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
   role       = aws_iam_role.ssm.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# Variables for controlling AWS CLI setup
+# Add setup_aws_cli variable
 variable "setup_aws_cli" {
-  description = "Whether to install AWS CLI if not found"
+  description = "Whether to setup AWS CLI in the SSM document"
   type        = string
-  default     = "true"
+  default     = "false"
 } 
