@@ -53,16 +53,16 @@ resource "aws_ssm_document" "service" {
               fi
               
               # Download artifacts from S3
-              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz /tmp/artifacts.tar.gz
+              aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
       - name: "ExtractArtifacts"
         action: "aws:runShellScript"
         inputs:
           runCommand:
             - |
               # Extract to working directory
-              tar -xzf /tmp/artifacts.tar.gz -C {{WorkingDirectory}}
+              tar -xzf {{WorkingDirectory}}/artifacts.tar.gz -C {{WorkingDirectory}}
               # Clean up
-              rm /tmp/artifacts.tar.gz
+              rm {{WorkingDirectory}}/artifacts.tar.gz
       - name: "UpdateService"
         action: "aws:runShellScript"
         inputs:
