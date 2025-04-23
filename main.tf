@@ -95,7 +95,7 @@ resource "aws_ssm_document" "service" {
               # Set service status
               if [ "{{ServiceStatus}}" = "enabled" ]; then
                 systemctl enable {{ServiceName}}
-                systemctl start {{ServiceName}}
+                systemctl restart {{ServiceName}}
               else
                 systemctl stop {{ServiceName}}
                 systemctl disable {{ServiceName}}

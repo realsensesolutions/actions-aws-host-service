@@ -27,8 +27,7 @@ jobs:
     - name: Deploy Service
       uses: realsensesolutions/actions-aws-host-service@main
       with:
-        status: enabled
-        
+        status: enabled        
         name: simple-service
         working-directory: /opt/simple-service
         definition: simple.service
