@@ -51,11 +51,63 @@ resource "aws_ssm_document" "service" {
             - |
               # Check if AWS CLI is installed
               if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
-                echo "AWS CLI not found. Installing..."
-                sudo curl https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip
-                sudo unzip {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}}
-                sudo {{WorkingDirectory}}/aws/install --update
-                sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
+                echo "AWS CLI not found. Checking if another process is installing it..."
+                
+                # Path for lock file
+                LOCK_FILE="/tmp/aws_cli_install.lock"
+                
+                # Check for lock file and its age
+                if [ -f "$LOCK_FILE" ]; then
+                  LOCK_AGE=$(($(date +%s) - $(stat -c %Y "$LOCK_FILE")))
+                  if [ $LOCK_AGE -gt 600 ]; then
+                    # Lock is older than 10 minutes, probably stale
+                    echo "Found stale lock file, removing it"
+                    rm -f "$LOCK_FILE"
+                  else
+                    echo "Another process is installing AWS CLI, waiting to check again..."
+                    # Wait for up to 5 minutes checking every 30 seconds if AWS CLI appeared
+                    MAX_ATTEMPTS=10
+                    for i in $(seq 1 $MAX_ATTEMPTS); do
+                      sleep 30
+                      if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                        echo "AWS CLI is now available!"
+                        break
+                      fi
+                      echo "Still waiting for AWS CLI to be installed (attempt $i/$MAX_ATTEMPTS)..."
+                    done
+                  fi
+                fi
+                
+                # If still not available, try to install with lock
+                if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                  # Create lock file with timestamp
+                  echo "$(date +%s)" > "$LOCK_FILE"
+                  
+                  # Try installation with retry logic
+                  MAX_RETRIES=3
+                  for attempt in $(seq 1 $MAX_RETRIES); do
+                    echo "Installing AWS CLI (attempt $attempt/$MAX_RETRIES)..."
+                    if curl -s https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip && \
+                       unzip -q {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}} && \
+                       sudo {{WorkingDirectory}}/aws/install --update; then
+                      echo "AWS CLI installed successfully!"
+                      sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
+                      rm -f "$LOCK_FILE"  # Remove lock file on success
+                      break
+                    else
+                      echo "AWS CLI installation failed on attempt $attempt"
+                      if [ $attempt -lt $MAX_RETRIES ]; then
+                        # Exponential backoff - wait longer between each retry
+                        SLEEP_TIME=$((10 * 2 ** (attempt - 1)))
+                        echo "Waiting $SLEEP_TIME seconds before retrying..."
+                        sleep $SLEEP_TIME
+                      else
+                        echo "All installation attempts failed"
+                        rm -f "$LOCK_FILE"  # Remove lock on complete failure too
+                      fi
+                    fi
+                  done
+                fi
               fi
               
               # Download artifacts from S3
