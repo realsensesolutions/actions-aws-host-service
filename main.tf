@@ -65,8 +65,8 @@ resource "aws_ssm_document" "service" {
                     rm -f "$LOCK_FILE"
                   else
                     echo "Another process is installing AWS CLI, waiting to check again..."
-                    # Wait for up to 5 minutes checking every 30 seconds if AWS CLI appeared
-                    MAX_ATTEMPTS=10
+                    # Wait for up to 10 minutes checking every 30 seconds if AWS CLI appeared
+                    MAX_ATTEMPTS=20
                     for i in $(seq 1 $MAX_ATTEMPTS); do
                       sleep 30
                       if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
@@ -75,11 +75,18 @@ resource "aws_ssm_document" "service" {
                       fi
                       echo "Still waiting for AWS CLI to be installed (attempt $i/$MAX_ATTEMPTS)..."
                     done
+                    
+                    # If AWS CLI still not available after waiting, just continue without it
+                    if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                      echo "AWS CLI still not available after waiting. Continuing without it..."
+                    fi
+                    # Skip the installation attempt completely
+                    SKIP_INSTALL=true
                   fi
                 fi
                 
-                # If still not available, try to install with lock
-                if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                # If still not available and no lock file exists, and we didn't just wait, try to install with lock
+                if [ -z "$SKIP_INSTALL" ] && ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null && [ ! -f "$LOCK_FILE" ]; then
                   # Create lock file with timestamp
                   echo "$(date +%s)" > "$LOCK_FILE"
                   
@@ -110,8 +117,14 @@ resource "aws_ssm_document" "service" {
                 fi
               fi
               
-              # Download artifacts from S3
-              /usr/local/aws-cli/v2/current/bin/aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
+              # Try to download artifacts with AWS CLI if available
+              if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                echo "Using AWS CLI to download artifacts"
+                /usr/local/aws-cli/v2/current/bin/aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
+              else
+                echo "AWS CLI not available. Download failed."
+                exit 1
+              fi
       - name: "ExtractArtifacts"
         action: "aws:runShellScript"
         inputs:
