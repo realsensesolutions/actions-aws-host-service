@@ -53,32 +53,16 @@ resource "aws_ssm_document" "service" {
               if command -v aws >/dev/null 2>&1 || command -v /usr/local/aws-cli/v2/current/bin/aws >/dev/null 2>&1; then
                 echo "AWS CLI is already installed, proceeding."
               else
-                echo "AWS CLI not found. Will check for it periodically..."
-                
-                # Try for 5 minutes (10 attempts with 30 second sleep)
-                for i in $(seq 1 10); do
-                  if command -v aws >/dev/null 2>&1 || command -v /usr/local/aws-cli/v2/current/bin/aws >/dev/null 2>&1; then
-                    echo "AWS CLI is now available!"
-                    break
-                  fi
-                  
-                  # After 5 minutes (10 attempts), install it ourselves
-                  if [ $i -eq 10 ]; then
-                    echo "AWS CLI not found after waiting. Installing it now."
-                    if curl -s https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip && \
-                       unzip -q {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}} && \
-                       sudo {{WorkingDirectory}}/aws/install --update; then
-                      echo "AWS CLI installed successfully!"
-                      sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
-                    else
-                      echo "AWS CLI installation failed."
-                      exit 1
-                    fi
-                  else
-                    echo "Attempt $i: AWS CLI not yet available, waiting 30 seconds..."
-                    sleep 30
-                  fi
-                done
+                echo "AWS CLI not found. Installing it now."
+                if curl -s https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip && \
+                   unzip -q {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}} && \
+                   sudo {{WorkingDirectory}}/aws/install --update; then
+                  echo "AWS CLI installed successfully!"
+                  sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
+                else
+                  echo "AWS CLI installation failed."
+                  exit 1
+                fi
               fi
       - name: "DownloadS3Artifacts"
         action: "aws:runShellScript"
