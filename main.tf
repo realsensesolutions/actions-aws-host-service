@@ -49,8 +49,8 @@ resource "aws_ssm_document" "service" {
         inputs:
           runCommand:
             - |
-              # Check if AWS CLI is installed
-              if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+              # Check if AWS CLI is installed - use multiple detection methods
+              if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null && ! command -v aws 2>&1 >/dev/null; then
                 echo "AWS CLI not found. Checking if another process is installing it..."
                 
                 # Path for lock file
@@ -69,7 +69,7 @@ resource "aws_ssm_document" "service" {
                     MAX_ATTEMPTS=20
                     for i in $(seq 1 $MAX_ATTEMPTS); do
                       sleep 30
-                      if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                      if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null || command -v aws 2>&1 >/dev/null; then
                         echo "AWS CLI is now available!"
                         break
                       fi
@@ -77,7 +77,7 @@ resource "aws_ssm_document" "service" {
                     done
                     
                     # If AWS CLI still not available after waiting, just continue without it
-                    if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
+                    if ! command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null && ! command -v aws 2>&1 >/dev/null; then
                       echo "AWS CLI still not available after waiting. Continuing without it..."
                     fi
                     # Skip the installation attempt completely
@@ -100,6 +100,14 @@ resource "aws_ssm_document" "service" {
                       echo "AWS CLI installed successfully!"
                       sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
                       rm -f "$LOCK_FILE"  # Remove lock file on success
+                      
+                      # Verify installation actually worked using same methods used for detection
+                      if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null || command -v aws 2>&1 >/dev/null; then
+                        echo "AWS CLI installation verified."
+                      else
+                        echo "Warning: AWS CLI was installed but cannot be detected. Continuing anyway..."
+                      fi
+                      
                       break
                     else
                       echo "AWS CLI installation failed on attempt $attempt"
@@ -119,11 +127,29 @@ resource "aws_ssm_document" "service" {
               
               # Try to download artifacts with AWS CLI if available
               if command -v /usr/local/aws-cli/v2/current/bin/aws 2>&1 >/dev/null; then
-                echo "Using AWS CLI to download artifacts"
+                echo "Using AWS CLI from specific path to download artifacts"
                 /usr/local/aws-cli/v2/current/bin/aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
+              elif command -v aws 2>&1 >/dev/null; then
+                echo "Using AWS CLI from PATH to download artifacts"
+                aws s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
               else
-                echo "AWS CLI not available. Download failed."
-                exit 1
+                # One final check - look for AWS CLI in common locations
+                for AWS_PATH in "/usr/bin/aws" "/usr/local/bin/aws" "/opt/aws/bin/aws" "/usr/local/aws-cli/*/current/bin/aws"; do
+                  if [ -x "$AWS_PATH" ]; then
+                    echo "Found AWS CLI at $AWS_PATH"
+                    $AWS_PATH s3 cp s3://${aws_s3_bucket.artifacts.bucket}/{{ArtifactPath}}/artifacts.tar.gz {{WorkingDirectory}}/artifacts.tar.gz
+                    if [ $? -eq 0 ]; then
+                      echo "Download successful"
+                      break
+                    fi
+                  fi
+                done
+                
+                # If we get here and the file doesn't exist, we failed
+                if [ ! -f "{{WorkingDirectory}}/artifacts.tar.gz" ]; then
+                  echo "AWS CLI not available or download failed."
+                  exit 1
+                fi
               fi
       - name: "ExtractArtifacts"
         action: "aws:runShellScript"
