@@ -54,15 +54,27 @@ resource "aws_ssm_document" "service" {
                 echo "AWS CLI is already installed, proceeding."
               else
                 echo "AWS CLI not found. Installing it now."
-                if curl -s https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip && \
-                   unzip -q {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}} && \
-                   sudo {{WorkingDirectory}}/aws/install --update; then
-                  echo "AWS CLI installed successfully!"
-                  sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
-                else
-                  echo "AWS CLI installation failed."
-                  exit 1
-                fi
+                # Create lock file directory if it doesn't exist
+                sudo mkdir -p /var/lock
+                # Use flock to ensure only one installation runs at a time
+                (
+                  flock -w 300 9 || { echo "Could not acquire lock for AWS CLI installation after 5 minutes. Another process may be installing it."; exit 1; }
+                  # Check again after acquiring the lock in case another process installed it
+                  if command -v aws >/dev/null 2>&1 || command -v /usr/local/aws-cli/v2/current/bin/aws >/dev/null 2>&1; then
+                    echo "AWS CLI was installed by another process while waiting for lock."
+                  else
+                    echo "Lock acquired, proceeding with AWS CLI installation."
+                    if curl -s https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip -o {{WorkingDirectory}}/awscliv2.zip && \
+                       unzip -q {{WorkingDirectory}}/awscliv2.zip -d {{WorkingDirectory}} && \
+                       sudo {{WorkingDirectory}}/aws/install --update; then
+                      echo "AWS CLI installed successfully!"
+                      sudo rm -rf {{WorkingDirectory}}/awscliv2.zip {{WorkingDirectory}}/aws
+                    else
+                      echo "AWS CLI installation failed."
+                      exit 1
+                    fi
+                  fi
+                ) 9>/var/lock/aws_cli_install.lock
               fi
       - name: "DownloadS3Artifacts"
         action: "aws:runShellScript"
