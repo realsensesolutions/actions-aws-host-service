@@ -43,16 +43,4 @@ variable "setup_file" {
   description = "Setup script file path (relative to artifacts)"
   type        = string
   default     = ""
-}
-
-variable "service" {
-  description = "Check if a dependent service is active before proceeding"
-  type        = bool
-  default     = false
-}
-
-variable "service_name" {
-  description = "Name of the infrastructure service to check before deployment"
-  type        = string
-  default     = ""
-}
+} 
