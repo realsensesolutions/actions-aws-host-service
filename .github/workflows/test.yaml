@@ -35,4 +35,5 @@ jobs:
         artifacts: resource/simple-service 
         targets: |
           Name:alonso-rpi4
-        
+        service: false
+        service_name: ""

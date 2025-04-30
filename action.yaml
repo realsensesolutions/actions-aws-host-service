@@ -29,6 +29,13 @@ inputs:
     description: "Desire outcome: apply, plan or destroy"
     required: false
     default: "apply"
+  service:
+    description: "Check if a dependent service is active before proceeding"
+    required: false
+    default: "false"
+  service_name:
+    description: "Name of the infrastructure service to check before deployment"
+    required: false
 
 
 outputs:
@@ -70,6 +77,8 @@ runs:
         TF_VAR_setup_file: ${{ inputs.setup }}
         TF_VAR_targets: ${{ inputs.targets }}
         TF_VAR_artifacts_path: ${{ github.workspace }}/${{ inputs.artifacts }}
+        TF_VAR_service: ${{ inputs.service }}
+        TF_VAR_service_name: ${{ inputs.service_name }}
       run: terraform ${{ env.ACTION }} ${{ env.ACTION_ARGS }}
 
     - name: get terraform outputs

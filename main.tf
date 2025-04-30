@@ -35,7 +35,43 @@ resource "aws_ssm_document" "service" {
         type: String
         description: Setup script file path
         default: ""
+      Service:
+        type: String
+        description: Whether to check for infrastructure service
+        default: "false"
+      DependentService:
+        type: String
+        description: Infrastructure service name to check
+        default: ""
     mainSteps:
+      - name: "CheckDependentService"
+        action: "aws:runShellScript"
+        precondition:
+          StringEquals: ["{{Service}}", "true"]
+        inputs:
+          runCommand:
+            - |
+              #!/bin/bash
+              if [ "{{DependentService}}" != "" ]; then
+                echo "Checking if {{DependentService}} service is active..."
+                max_retries=20
+                retry_count=0
+                
+                while [ $retry_count -lt $max_retries ]; do
+                  if systemctl is-active {{DependentService}} >/dev/null 2>&1; then
+                    echo "Service {{DependentService}} is active, proceeding with deployment."
+                    exit 0
+                  else
+                    echo "Service {{DependentService}} is not active, retrying in 30 seconds (attempt $((retry_count+1))/$max_retries)"
+                    sleep 30
+                    retry_count=$((retry_count+1))
+                  fi
+                done
+                
+                echo "Service {{DependentService}} did not become active after $max_retries attempts. Deployment will continue but may fail."
+              else
+                echo "No infrastructure service specified to check. Proceeding without checks."
+              fi
       - name: "PrepareDirectory"
         action: "aws:runShellScript"
         inputs:
@@ -198,6 +234,8 @@ resource "aws_ssm_association" "service" {
     ArtifactPath    = var.artifact_path
     DefinitionFile  = var.definition_file
     SetupFile       = var.setup_file
+    Service         = tostring(var.service)
+    DependentService = var.service_name
   }
 }
 
