@@ -108,8 +108,8 @@ resource "aws_ssm_document" "service" {
               if [ -d "{{WorkingDirectory}}" ]; then
                 # Find all files in the temp directory
                 find "$$TEMP_DIR" -type f | while read -r SOURCE_FILE; do
-                  # Calculate relative path
-                  REL_PATH="$${SOURCE_FILE#$$TEMP_DIR/}"
+                  # Calculate relative path using sed instead of parameter expansion
+                  REL_PATH=$$(echo "$$SOURCE_FILE" | sed "s|^$$TEMP_DIR/||")
                   TARGET_FILE="{{WorkingDirectory}}/$$REL_PATH"
                   TARGET_DIR=$$(dirname "$$TARGET_FILE")
                   
