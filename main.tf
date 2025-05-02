@@ -99,37 +99,37 @@ resource "aws_ssm_document" "service" {
             - |
               # Create a temporary directory for extraction
               TEMP_DIR="{{WorkingDirectory}}/.temp_extract"
-              mkdir -p "$TEMP_DIR"
+              mkdir -p "$$TEMP_DIR"
               
               # Extract artifacts to temp directory
-              tar -xzf {{WorkingDirectory}}/artifacts.tar.gz -C "$TEMP_DIR"
+              tar -xzf {{WorkingDirectory}}/artifacts.tar.gz -C "$$TEMP_DIR"
               
               # Compare and copy only changed files
               if [ -d "{{WorkingDirectory}}" ]; then
                 # Find all files in the temp directory
-                find "$TEMP_DIR" -type f | while read -r SOURCE_FILE; do
+                find "$$TEMP_DIR" -type f | while read -r SOURCE_FILE; do
                   # Calculate relative path
-                  REL_PATH="${SOURCE_FILE#$TEMP_DIR/}"
-                  TARGET_FILE="{{WorkingDirectory}}/$REL_PATH"
-                  TARGET_DIR=$(dirname "$TARGET_FILE")
+                  REL_PATH="$${SOURCE_FILE#$$TEMP_DIR/}"
+                  TARGET_FILE="{{WorkingDirectory}}/$$REL_PATH"
+                  TARGET_DIR=$$(dirname "$$TARGET_FILE")
                   
                   # Create target directory if it doesn't exist
-                  mkdir -p "$TARGET_DIR"
+                  mkdir -p "$$TARGET_DIR"
                   
                   # Compare and copy only if different or doesn't exist
-                  if [ ! -f "$TARGET_FILE" ] || ! cmp -s "$SOURCE_FILE" "$TARGET_FILE"; then
-                    echo "Updating file: $REL_PATH"
-                    cp -f "$SOURCE_FILE" "$TARGET_FILE"
+                  if [ ! -f "$$TARGET_FILE" ] || ! cmp -s "$$SOURCE_FILE" "$$TARGET_FILE"; then
+                    echo "Updating file: $$REL_PATH"
+                    cp -f "$$SOURCE_FILE" "$$TARGET_FILE"
                   fi
                 done
               else
                 # If working directory doesn't exist yet, just move everything
-                cp -R "$TEMP_DIR/"* "{{WorkingDirectory}}/"
+                cp -R "$$TEMP_DIR/"* "{{WorkingDirectory}}/"
               fi
               
               # Clean up
               rm {{WorkingDirectory}}/artifacts.tar.gz
-              rm -rf "$TEMP_DIR"
+              rm -rf "$$TEMP_DIR"
       - name: "RunSetup"
         action: "aws:runShellScript"
         inputs:
